@@ -91,6 +91,7 @@ function Login() {
         try {
             // TODO: replace with your real login request
             await new Promise((resolve) => setTimeout(resolve, 900));
+            navigate('/dashboard')
             console.log({ ...formData, remember });
         } catch {
             setFormError("We couldn't sign you in. Check your details and try again.");
@@ -235,7 +236,7 @@ function Login() {
                             <label htmlFor="remember">Keep me signed in on this device</label>
                         </div>
 
-                        <button type="submit" className="login-button" disabled={submitting}>
+                        <button type="submit" className="login-button" disabled={submitting} onClick={()=>navigate('/dashboard')}>
                             {submitting ? (
                                 <>
                                     <span className="spinner" aria-hidden="true" />
