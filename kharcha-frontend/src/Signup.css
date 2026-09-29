@@ -1,0 +1,200 @@
+/* Signup additions. Requires Login.css (tokens, layout, fields, buttons). */
+
+/* =========================
+   LEFT: ONBOARDING STEPS
+========================= */
+
+.steps {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding-bottom: 22px;
+  opacity: 0.6;
+}
+
+.step:last-child {
+  padding-bottom: 0;
+}
+
+/* connector line between steps */
+.step:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 34px;
+  bottom: 2px;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.step.current {
+  opacity: 1;
+}
+
+.step-num {
+  flex-shrink: 0;
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-size: 14px;
+  font-weight: 700;
+  color: #dcebe4;
+}
+
+.step.current .step-num {
+  background: var(--mint);
+  border-color: var(--mint);
+  color: var(--ink);
+}
+
+.step-title {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 31px;
+}
+
+.step-text {
+  margin-top: -2px;
+  font-size: 13.5px;
+  color: #a9c3b9;
+}
+
+/* =========================
+   RIGHT: FORM ADDITIONS
+========================= */
+
+.signup-form-section {
+  padding: 40px 60px;
+}
+
+.signup-form-section .form-header {
+  margin-bottom: 24px;
+}
+
+.signup-form-section .form-group {
+  margin-bottom: 16px;
+}
+
+/* ---- +91 prefix field ---- */
+
+.prefix-input {
+  position: relative;
+}
+
+.prefix {
+  position: absolute;
+  left: 1px;
+  top: 1px;
+  bottom: 1px;
+  width: 52px;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--line);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  color: var(--text-muted);
+  font-size: 15px;
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.form-group .prefix-input input {
+  padding-left: 66px;
+}
+
+/* ---- Password strength ---- */
+
+.strength {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.strength span {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  transition: background 0.2s ease;
+}
+
+.strength[data-level="1"] span:nth-child(-n + 1) { background: #d92d20; }
+.strength[data-level="2"] span:nth-child(-n + 2) { background: #f79009; }
+.strength[data-level="3"] span:nth-child(-n + 3) { background: #7cc36e; }
+.strength[data-level="4"] span:nth-child(-n + 4) { background: var(--brand); }
+
+.hint {
+  margin-top: 7px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* ---- Terms ---- */
+
+.terms {
+  margin: 4px 0 22px;
+}
+
+.terms-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.terms-row input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--brand);
+  cursor: pointer;
+}
+
+.terms-row label {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.terms-row a {
+  color: var(--brand);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.terms-row a:hover {
+  color: var(--brand-hover);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+  .signup-form-section {
+    padding: 40px 44px;
+  }
+}
+
+@media (max-width: 500px) {
+  .signup-form-section {
+    padding: 28px 22px 32px;
+  }
+
+  .form-group .prefix-input input {
+    font-size: 16px;
+  }
+}
