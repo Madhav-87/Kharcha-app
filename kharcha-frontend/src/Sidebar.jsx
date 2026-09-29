@@ -13,9 +13,9 @@ import "./Sidebar.css";
 const navigationItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", page: "dashboard" },
   { label: "Transactions", icon: ReceiptText, path: "/transactions", page: "transactions" },
-  { label: "Budgets", icon: PieChart, path: "#", page: "budgets" },
-  { label: "UPI Pay", icon: ArrowUpRight, path: "#", page: "pay" },
-  { label: "Insights", icon: BarChart2, path: "#", page: "insights" },
+  { label: "Budgets", icon: PieChart, path: "/budget", page: "budgets" },
+  { label: "UPI Pay", icon: ArrowUpRight, path: "/upi-pay", page: "pay" },
+  { label: "Insights", icon: BarChart2, path: "/insights", page: "insights" },
   { label: "Categories", icon: Shapes, path: "/category", page: "categories" },
 ];
 
