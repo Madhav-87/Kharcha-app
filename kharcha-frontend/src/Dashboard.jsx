@@ -1,10 +1,6 @@
 import "./Dashboard.css"
 import {
-    LayoutDashboard,
-    ReceiptText,
-    PieChart,
     ArrowUpRight,
-    BarChart2,
     Utensils,
     Bus,
     Tv,
@@ -17,9 +13,9 @@ import {
     ArrowDownLeft,
     Sparkles,
     HelpCircle,
-    Shapes
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import Sidebar from './Sidebar';
 
 // ==========================================
 // 1. DATA (Keep this outside to keep logic clean)
@@ -55,25 +51,6 @@ const chartData = [
     { day: 'S', height: '35%', active: false },
 ];
 
-// ==========================================
-// 2. CSS STYLES (Move this to dashboard.css in your real app)
-// ==========================================
-
-
-// ==========================================
-// 3. REUSABLE MICRO-COMPONENTS
-// ==========================================
-const SidebarItem = ({ icon: Icon, label, isActive, path }) => {
-    const navigate =useNavigate()
-    return (
-        <button className={`nav-item ${isActive ? 'active' : ''}`} onClick={() => navigate(path)}>
-            <Icon size={20} />
-            <span>{label}</span>
-        </button>
-    );
-
-}
-
 const ProgressBar = ({ progress, color }) => (
     <div className="progress-track" >
         <div className="progress-fill" style={{ width: `${progress}%`, backgroundColor: color }} />
@@ -85,42 +62,11 @@ const ProgressBar = ({ progress, color }) => (
 // 4. MAIN DASHBOARD COMPONENT
 // ==========================================
 export default function Dashboard() {
+    const navigate = useNavigate();
 
     return (
-        <>
-
-            <div className="app-container">
-
-                {/* === SIDEBAR === */}
-                <aside className="sidebar">
-                    <div>
-                        <div className="sidebar-logo">
-                            <div className="logo-circle">P</div>
-                            <div>
-                                <h1 style={{ fontSize: '18px', fontWeight: 'bold' }}>Paisa</h1>
-                                <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Student finance</p>
-                            </div>
-                        </div>
-
-                        <nav className="sidebar-nav">
-                            <SidebarItem icon={LayoutDashboard} label="Dashboard" isActive={true} path="#" />
-                            <SidebarItem icon={ReceiptText} label="Transactions" isActive={false} path="/transactions" />
-                            <SidebarItem icon={PieChart} label="Budgets" isActive={false} path="#" />
-                            <SidebarItem icon={ArrowUpRight} label="UPI Pay" isActive={false} path="#" />
-                            <SidebarItem icon={BarChart2} label="Insights" isActive={false} path="#" />
-                            <SidebarItem icon={Shapes} label="Categories" isActive={false} path='/category' />
-                        </nav>
-                    </div>
-
-                    <div className="monthly-goal">
-                        <p className="goal-title">Monthly Goal</p>
-                        <h3 className="goal-amount">Save ₹3,000</h3>
-                        <div className="goal-track">
-                            <div className="goal-fill" />
-                        </div>
-                        <p className="goal-desc">₹2,000 of ₹3,000 saved</p>
-                    </div>
-                </aside>
+        <div className="app-container dashboard-page">
+            <Sidebar activePage="dashboard" />
 
                 {/* === MAIN CONTENT === */}
                 <main className="main-content">
@@ -163,10 +109,10 @@ export default function Dashboard() {
                             <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                                 <p className="quick-action-label">Quick action</p>
                                 <div>
-                                    <button className="btn-primary">
+                                    <button className="btn-primary" type="button" onClick={() => navigate('/upi-pay')}>
                                         <ArrowUpRight size={18} /> Pay with UPI
                                     </button>
-                                    <button className="btn-secondary">
+                                    <button className="btn-secondary" type="button" onClick={() => navigate('/transactions')}>
                                         <Plus size={18} /> Add expense
                                     </button>
                                 </div>
@@ -251,7 +197,7 @@ export default function Dashboard() {
                             <div className="card">
                                 <div className="tx-header">
                                     <h3 className="card-title" style={{ marginBottom: 0 }}>Recent transactions</h3>
-                                    <button className="btn-text">
+                                    <button className="btn-text" type="button" onClick={() => navigate('/transactions')}>
                                         View all <ArrowUpRight size={16} />
                                     </button>
                                 </div>
@@ -298,7 +244,6 @@ export default function Dashboard() {
 
                     </div>
                 </main>
-            </div>
-        </>
+        </div>
     );
 }
