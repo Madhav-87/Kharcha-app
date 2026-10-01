@@ -48,6 +48,9 @@ Category customization and saved-payee endpoints are documented in
 Manual expense creation, editing, soft deletion, filtering, and pagination are
 documented in [`docs/expenses.md`](docs/expenses.md).
 
+Monthly and category budgets, usage calculations, and threshold alert behavior
+are documented in [`docs/budgets-alerts.md`](docs/budgets-alerts.md).
+
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
 

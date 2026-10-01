@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.budgets.alerts import evaluate_budget_alerts
 from apps.categories.models import Category
 from apps.expenses.models import Expense
 from apps.payments.models import Payee
@@ -33,19 +34,24 @@ def create_manual_expense(user, values):
     data = dict(values)
     category = _category_for_user(user, data.pop("category_public_id"))
     payee = _payee_for_user(user, data.pop("payee_public_id", None))
-    return Expense.objects.create(
+    expense = Expense.objects.create(
         user=user,
         category=category,
         payee=payee,
         source=Expense.Source.MANUAL,
         **data,
     )
+    month = expense.expense_at.date().replace(day=1)
+    evaluate_budget_alerts(user, month, category_ids=[category.pk])
+    return expense
 
 
 @transaction.atomic
 def update_manual_expense(user, expense, values):
     if expense.source != Expense.Source.MANUAL or expense.payment_id is not None:
         raise PermissionDenied("Payment-linked expenses cannot be edited manually.")
+    old_month = expense.expense_at.date().replace(day=1)
+    old_category_id = expense.category_id
     data = dict(values)
     if "category_public_id" in data:
         data["category"] = _category_for_user(user, data.pop("category_public_id"))
@@ -55,6 +61,9 @@ def update_manual_expense(user, expense, values):
         setattr(expense, field, value)
     if data:
         expense.save(update_fields=tuple(data))
+    new_month = expense.expense_at.date().replace(day=1)
+    for month, category_id in {(old_month, old_category_id), (new_month, expense.category_id)}:
+        evaluate_budget_alerts(user, month, category_ids=[category_id])
     return expense
 
 
@@ -64,3 +73,6 @@ def delete_manual_expense(user, expense):
         raise PermissionDenied("Payment-linked expenses cannot be deleted manually.")
     expense.deleted_at = timezone.now()
     expense.save(update_fields=("deleted_at",))
+    evaluate_budget_alerts(
+        user, expense.expense_at.date().replace(day=1), category_ids=[expense.category_id]
+    )
