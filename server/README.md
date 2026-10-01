@@ -58,6 +58,9 @@ callbacks, and stale-payment reconciliation are documented in
 The in-app notification inbox, device token management, and FCM delivery setup
 are documented in [`docs/notifications-fcm.md`](docs/notifications-fcm.md).
 
+Dashboard summaries, spend trends, category breakdowns, and budget usage are
+documented in [`docs/analytics-dashboard.md`](docs/analytics-dashboard.md).
+
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
 
