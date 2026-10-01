@@ -2,7 +2,7 @@
 
 from django.db.models import Q
 
-from apps.payments.models import Payee
+from apps.payments.models import Payee, Payment
 
 
 def list_payees(user, *, search="", favorite=None):
@@ -17,4 +17,17 @@ def list_payees(user, *, search="", favorite=None):
 def get_payee(user, public_id):
     return Payee.objects.filter(user=user, public_id=public_id).select_related(
         "default_category"
+    ).first()
+
+
+def list_payments(user, *, status_value=None):
+    queryset = Payment.objects.filter(user=user).select_related("payee", "upi_app").order_by("-initiated_at", "-pk")
+    if status_value:
+        queryset = queryset.filter(status=status_value)
+    return queryset
+
+
+def get_payment(user, public_id):
+    return Payment.objects.filter(user=user, public_id=public_id).select_related(
+        "payee", "upi_app", "expense", "expense__category"
     ).first()

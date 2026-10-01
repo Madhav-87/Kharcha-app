@@ -51,6 +51,10 @@ documented in [`docs/expenses.md`](docs/expenses.md).
 Monthly and category budgets, usage calculations, and threshold alert behavior
 are documented in [`docs/budgets-alerts.md`](docs/budgets-alerts.md).
 
+UPI intent initiation, idempotency, payment status transitions, verified
+callbacks, and stale-payment reconciliation are documented in
+[`docs/payments.md`](docs/payments.md).
+
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
 

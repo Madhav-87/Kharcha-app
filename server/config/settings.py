@@ -5,6 +5,7 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
+from corsheaders.defaults import default_headers
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
@@ -127,6 +128,7 @@ CORS_ALLOWED_ORIGINS = env_list(
 )
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 CORS_ALLOW_CREDENTIALS = env_bool("CORS_ALLOW_CREDENTIALS", True)
+CORS_ALLOW_HEADERS = (*default_headers, "idempotency-key")
 
 REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "common.exceptions.api_exception_handler",
@@ -156,6 +158,7 @@ ACCESS_TOKEN_TTL_SECONDS = int(os.getenv("ACCESS_TOKEN_TTL_SECONDS", "900"))
 REFRESH_SESSION_TTL_DAYS = int(os.getenv("REFRESH_SESSION_TTL_DAYS", "30"))
 PASSWORD_RESET_TTL_MINUTES = int(os.getenv("PASSWORD_RESET_TTL_MINUTES", "30"))
 GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+UPI_CALLBACK_SECRET = os.getenv("UPI_CALLBACK_SECRET", "")
 FRONTEND_PASSWORD_RESET_URL = os.getenv(
     "FRONTEND_PASSWORD_RESET_URL", "http://localhost:5173/reset-password"
 )
@@ -195,6 +198,12 @@ CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
+CELERY_BEAT_SCHEDULE = {
+    "reconcile-stale-upi-payments": {
+        "task": "payments.reconcile_stale_payments",
+        "schedule": 300.0,
+    },
+}
 
 LOGGING = {
     "version": 1,

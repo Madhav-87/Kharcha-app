@@ -24,7 +24,7 @@ def api_exception_handler(exc, context):
     elif isinstance(exc, exceptions.Throttled):
         code, detail, fields = "RATE_LIMITED", "Too many requests. Try again later.", {}
     else:
-        code = "REQUEST_FAILED"
+        code = str(getattr(exc, "default_code", "request_failed")).upper()
         value = response.data.get("detail") if isinstance(response.data, dict) else None
         detail = str(value) if value else "The request could not be completed."
         fields = {}
