@@ -23,10 +23,12 @@ The React development server proxies `/api` requests to Django at
 `http://127.0.0.1:8000`. Its API helper uses `/api/v1` by default; set
 `VITE_API_BASE_URL` only when the API is hosted at a different base URL.
 
-The app modules currently provide URL includes for their API areas, but their
-endpoints and schema-aligned models are still being implemented. Apply the
-provided MySQL schema as the database source of truth; wait for the model phase
-before using Django migrations against that database.
+The app modules provide URL includes and now map the supplied schema through
+unmanaged Django models. Apply `student_finance_schema_mysql.sql` to create the
+tables, triggers, seed data, and reporting views. Do not use Django migrations
+to create or alter those schema-owned objects. See
+[`docs/mysql-compatibility.md`](docs/mysql-compatibility.md) for the field and
+MySQL compatibility decisions.
 
 ## Configuration
 
