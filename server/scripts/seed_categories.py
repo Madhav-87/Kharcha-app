@@ -1,0 +1,1 @@
+"""Seed default expense and income categories."""

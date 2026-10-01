@@ -1,0 +1,1 @@
+"""Expense and income transaction models."""

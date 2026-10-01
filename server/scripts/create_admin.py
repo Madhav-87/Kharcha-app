@@ -1,0 +1,1 @@
+"""Create an admin user using configured Django settings."""

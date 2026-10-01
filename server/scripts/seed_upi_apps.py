@@ -1,0 +1,1 @@
+"""Seed supported UPI app metadata."""

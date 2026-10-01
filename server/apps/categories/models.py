@@ -1,0 +1,1 @@
+"""Expense and income category models."""
