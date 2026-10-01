@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.utils import timezone
 from rest_framework.exceptions import PermissionDenied, ValidationError
 
+from apps.accounts.services import record_audit
 from apps.budgets.alerts import evaluate_budget_alerts
 from apps.categories.models import Category
 from apps.expenses.models import Expense
@@ -73,6 +74,13 @@ def delete_manual_expense(user, expense):
         raise PermissionDenied("Payment-linked expenses cannot be deleted manually.")
     expense.deleted_at = timezone.now()
     expense.save(update_fields=("deleted_at",))
+    record_audit(
+        user,
+        "expense_delete",
+        entity_type="expense",
+        entity_id=expense.pk,
+        metadata={"source": expense.source},
+    )
     evaluate_budget_alerts(
         user, expense.expense_at.date().replace(day=1), category_ids=[expense.category_id]
     )

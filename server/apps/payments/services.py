@@ -7,6 +7,7 @@ from django.db.models import F, Q
 from django.utils import timezone
 from rest_framework.exceptions import APIException, NotFound, ValidationError
 
+from apps.accounts.services import record_audit
 from apps.categories.models import Category
 from apps.expenses.models import Expense
 from apps.payments.models import Payee, Payment, UpiApp
@@ -126,6 +127,13 @@ def initiate_payment(user, values, idempotency_key):
         status=Expense.Status.PENDING,
         source=Expense.Source.UPI_PAYMENT,
     )
+    record_audit(
+        user,
+        "payment_created",
+        entity_type="payment",
+        entity_id=payment.pk,
+        metadata={"source": "upi_intent"},
+    )
     if payee:
         Payee.objects.filter(pk=payee.pk).update(use_count=F("use_count") + 1, last_used_at=timezone.now())
     return _intent_response(payment)
@@ -164,6 +172,13 @@ def _set_payment_status(payment, new_status, *, confirmed_by=None, upi_txn_ref=N
         payment.upi_txn_ref = upi_txn_ref
     payment.failure_reason = failure_reason or None
     payment.save(update_fields=("status", "confirmed_by", "resolved_at", "upi_txn_ref", "failure_reason", "updated_at"))
+    record_audit(
+        payment.user,
+        "payment_status_changed",
+        entity_type="payment",
+        entity_id=payment.pk,
+        metadata={"from_status": current, "to_status": new_status, "confirmed_by": confirmed_by},
+    )
     # MySQL status trigger synchronizes the associated expense status and appends an event.
     from apps.notifications.services import record_payment_status_notification
 

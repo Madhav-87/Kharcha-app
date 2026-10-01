@@ -17,6 +17,7 @@ from apps.accounts.views import (
     SessionsView,
     SettingsView,
 )
+from apps.support.views import DeleteAccountView, ExportDataView, ExportDownloadView, PrivacyView
 
 urlpatterns = [
     path("auth/register/", RegisterView.as_view(), name="auth-register"),
@@ -33,6 +34,10 @@ urlpatterns = [
     path("auth/sessions/<str:public_id>/", SessionDetailView.as_view(), name="auth-session-detail"),
     path("users/me/", ProfileView.as_view(), name="user-profile"),
     path("settings/", SettingsView.as_view(), name="user-settings"),
+    path("settings/privacy/", PrivacyView.as_view(), name="privacy-status"),
+    path("settings/export-data/", ExportDataView.as_view(), name="export-data"),
+    path("settings/export-data/<str:token>/download/", ExportDownloadView.as_view(), name="export-data-download"),
+    path("settings/delete-account/", DeleteAccountView.as_view(), name="delete-account"),
     path("onboarding/", OnboardingView.as_view(), name="onboarding"),
     path("onboarding/complete/", CompleteOnboardingView.as_view(), name="onboarding-complete"),
 ]

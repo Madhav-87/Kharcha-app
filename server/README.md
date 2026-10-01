@@ -61,6 +61,9 @@ are documented in [`docs/notifications-fcm.md`](docs/notifications-fcm.md).
 Dashboard summaries, spend trends, category breakdowns, and budget usage are
 documented in [`docs/analytics-dashboard.md`](docs/analytics-dashboard.md).
 
+Support issues, privacy export/deletion requests, and audit event handling are
+documented in [`docs/support-privacy-audit.md`](docs/support-privacy-audit.md).
+
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
 

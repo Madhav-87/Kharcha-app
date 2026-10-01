@@ -23,7 +23,6 @@ from apps.accounts.models import (
     User,
     UserSettings,
 )
-from apps.audit.models import AuditLog
 from apps.categories.models import Category, UserCategory
 from apps.payments.models import UpiApp
 
@@ -322,13 +321,15 @@ def record_audit(
     ip_address: str | None = None,
     metadata: dict | None = None,
 ) -> None:
-    AuditLog.objects.create(
-        user=user,
-        action=action,
+    from apps.audit.services import record_event
+
+    record_event(
+        user,
+        action,
         entity_type=entity_type,
         entity_id=entity_id,
         ip_address=ip_address,
-        metadata=metadata or None,
+        metadata=metadata,
     )
 
 

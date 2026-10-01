@@ -119,6 +119,7 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+PRIVATE_EXPORT_ROOT = Path(os.getenv("PRIVATE_EXPORT_ROOT", BASE_DIR / "private_exports")).resolve()
 DEFAULT_AUTO_FIELD = "common.db_fields.UnsignedBigAutoField"
 
 CORS_ALLOWED_ORIGINS = env_list(

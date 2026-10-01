@@ -4,6 +4,7 @@ __pycache__/
 *.sqlite3
 media/*
 !media/.gitkeep
+private_exports/
 staticfiles/
 .pytest_cache/
 .coverage
