@@ -45,6 +45,9 @@ Google sign-in and SMTP settings for password reset email in production. See
 Category customization and saved-payee endpoints are documented in
 [`docs/categories-payees.md`](docs/categories-payees.md).
 
+Manual expense creation, editing, soft deletion, filtering, and pagination are
+documented in [`docs/expenses.md`](docs/expenses.md).
+
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
 
