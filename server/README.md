@@ -55,6 +55,9 @@ UPI intent initiation, idempotency, payment status transitions, verified
 callbacks, and stale-payment reconciliation are documented in
 [`docs/payments.md`](docs/payments.md).
 
+The in-app notification inbox, device token management, and FCM delivery setup
+are documented in [`docs/notifications-fcm.md`](docs/notifications-fcm.md).
+
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
 

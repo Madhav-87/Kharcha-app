@@ -11,7 +11,7 @@ from apps.notifications.models import Notification
 def _create_notification(user, *, notification_type, severity, title, body, dedupe_key, data, category_budget=None):
     try:
         with transaction.atomic():
-            return Notification.objects.create(
+            notification = Notification.objects.create(
                 user=user,
                 type=notification_type,
                 severity=severity,
@@ -22,9 +22,19 @@ def _create_notification(user, *, notification_type, severity, title, body, dedu
                 category_budget=category_budget,
                 dedupe_key=dedupe_key,
             )
+            from apps.notifications.services import queue_notification_delivery
+
+            queue_notification_delivery(notification)
+            return notification
     except IntegrityError:
         # Another expense or budget update already emitted this period's alert.
-        return None
+        notification = Notification.objects.filter(user=user, dedupe_key=dedupe_key).first()
+        if notification:
+            from apps.notifications.services import queue_notification_delivery
+
+            queue_notification_delivery(notification)
+            return None
+        raise
 
 
 @transaction.atomic

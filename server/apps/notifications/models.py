@@ -122,7 +122,7 @@ class NotificationDelivery(models.Model):
         blank=True,
         related_name="deliveries",
     )
-    status = models.CharField(max_length=12, choices=Status.choices, default=Status.QUEUED)
+    status = models.CharField(max_length=13, choices=Status.choices, default=Status.QUEUED)
     fcm_message_id = models.CharField(max_length=255, null=True, blank=True)
     error_code = models.CharField(max_length=80, null=True, blank=True)
     attempts = UnsignedTinyIntegerField(default=0)

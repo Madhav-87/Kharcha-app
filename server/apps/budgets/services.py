@@ -38,6 +38,11 @@ def save_monthly_budget(user, values):
         budget.limit_paise = values["limit_paise"]
         budget.is_recurring = values.get("is_recurring", budget.is_recurring)
         budget.save(update_fields=("limit_paise", "is_recurring", "updated_at"))
+    from apps.notifications.services import record_budget_updated
+
+    record_budget_updated(
+        user, period_month=month, limit_paise=budget.limit_paise
+    )
     alerts.evaluate_budget_alerts(user, month)
     return budget
 
@@ -57,6 +62,15 @@ def create_category_budget(user, values):
         )
     except IntegrityError as exc:
         raise ValidationError({"category_public_id": "A budget already exists for this category and month."}) from exc
+    from apps.notifications.services import record_budget_updated
+
+    record_budget_updated(
+        user,
+        period_month=month,
+        limit_paise=budget.limit_paise,
+        category_budget=budget,
+        category=category,
+    )
     alerts.evaluate_budget_alerts(user, month, category_ids=[category.pk])
     return budget
 
@@ -70,6 +84,15 @@ def update_category_budget(user, budget, values):
         budget.save(update_fields=tuple(values) + ("updated_at",))
     except IntegrityError as exc:
         raise ValidationError("The category budget could not be updated.") from exc
+    from apps.notifications.services import record_budget_updated
+
+    record_budget_updated(
+        user,
+        period_month=budget.period_month,
+        limit_paise=budget.limit_paise,
+        category_budget=budget,
+        category=budget.category,
+    )
     alerts.evaluate_budget_alerts(user, budget.period_month, category_ids=[budget.category_id])
     return budget
 

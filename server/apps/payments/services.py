@@ -165,6 +165,9 @@ def _set_payment_status(payment, new_status, *, confirmed_by=None, upi_txn_ref=N
     payment.failure_reason = failure_reason or None
     payment.save(update_fields=("status", "confirmed_by", "resolved_at", "upi_txn_ref", "failure_reason", "updated_at"))
     # MySQL status trigger synchronizes the associated expense status and appends an event.
+    from apps.notifications.services import record_payment_status_notification
+
+    record_payment_status_notification(payment)
     if new_status == Payment.Status.SUCCESSFUL:
         expense = Expense.objects.filter(payment=payment).first()
         if expense:
