@@ -36,7 +36,11 @@ if not SECRET_KEY:
         "Set DJANGO_SECRET_KEY (or the legacy SECRET_KEY) in server/.env."
     )
 
-ALLOWED_HOSTS = env_list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1", legacy_name="ALLOWED_HOSTS")
+ALLOWED_HOSTS = env_list(
+    "DJANGO_ALLOWED_HOSTS",
+    "localhost,127.0.0.1" if DEBUG else "",
+    legacy_name="ALLOWED_HOSTS",
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -124,7 +128,7 @@ DEFAULT_AUTO_FIELD = "common.db_fields.UnsignedBigAutoField"
 
 CORS_ALLOWED_ORIGINS = env_list(
     "CORS_ALLOWED_ORIGINS",
-    "http://localhost:5173",
+    "http://localhost:5173" if DEBUG else "",
     legacy_name="FRONTEND_URL",
 )
 CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
@@ -144,14 +148,21 @@ REST_FRAMEWORK = {
     "PAGE_SIZE": 20,
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.ScopedRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+        "rest_framework.throttling.AnonRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
+        "user": "120/minute",
+        "anon": "60/minute",
         "auth_register": "5/hour",
         "auth_login": "10/minute",
         "auth_google": "10/minute",
         "auth_forgot_password": "3/hour",
         "auth_reset_password": "10/hour",
         "auth_refresh": "30/hour",
+        "support_issue": "10/hour",
+        "privacy_export": "3/day",
+        "privacy_delete": "3/day",
     },
 }
 
@@ -176,16 +187,49 @@ EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "25"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
-EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", not DEBUG)
 EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Student Finance <no-reply@example.com>")
 
-# Respect explicit deployment settings while using secure cookie defaults outside
-# local development. HTTPS termination/proxy details remain deployment-specific.
+if not DEBUG:
+    if len(SECRET_KEY) < 50 or len(set(SECRET_KEY)) < 5 or SECRET_KEY.startswith("django-insecure-"):
+        raise ImproperlyConfigured("Production requires a long, randomly generated DJANGO_SECRET_KEY.")
+    if not ALLOWED_HOSTS or "*" in ALLOWED_HOSTS:
+        raise ImproperlyConfigured("Set explicit production hostnames in DJANGO_ALLOWED_HOSTS.")
+    if not CORS_ALLOWED_ORIGINS:
+        raise ImproperlyConfigured("Set the production frontend origin in CORS_ALLOWED_ORIGINS.")
+    if any(not origin.startswith("https://") for origin in CORS_ALLOWED_ORIGINS):
+        raise ImproperlyConfigured("Production CORS origins must use HTTPS.")
+    if not set(CORS_ALLOWED_ORIGINS).issubset(CSRF_TRUSTED_ORIGINS):
+        raise ImproperlyConfigured(
+            "Add each production frontend origin to CSRF_TRUSTED_ORIGINS."
+        )
+    if not FRONTEND_PASSWORD_RESET_URL.startswith("https://"):
+        raise ImproperlyConfigured("Set FRONTEND_PASSWORD_RESET_URL to the production HTTPS frontend.")
+    if len(UPI_CALLBACK_SECRET) < 32:
+        raise ImproperlyConfigured("Production requires a strong UPI_CALLBACK_SECRET for verified callbacks.")
+    if not os.getenv("DB_PASSWORD"):
+        raise ImproperlyConfigured("Set DB_PASSWORD to a dedicated production database credential.")
+    if os.getenv("DB_USER", "root").lower() in {"root", "admin"}:
+        raise ImproperlyConfigured("Use a least-privilege MySQL account in production, not root/admin.")
+    if EMAIL_BACKEND == "django.core.mail.backends.console.EmailBackend":
+        raise ImproperlyConfigured("Production password reset email cannot use the console backend.")
+    if EMAIL_BACKEND == "django.core.mail.backends.smtp.EmailBackend":
+        if EMAIL_HOST in {"", "localhost", "127.0.0.1"}:
+            raise ImproperlyConfigured("Set a production SMTP host for password reset email.")
+        if not EMAIL_USE_TLS and not EMAIL_USE_SSL:
+            raise ImproperlyConfigured("Production SMTP must use TLS or SSL.")
+if EMAIL_USE_TLS and EMAIL_USE_SSL:
+    raise ImproperlyConfigured("Use either EMAIL_USE_TLS or EMAIL_USE_SSL, not both.")
+
+# Respect explicit deployment settings and default to HTTPS outside local
+# development. If TLS terminates at a proxy, trust forwarded protocol only when
+# that proxy overwrites the header.
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = env_bool("SESSION_COOKIE_SECURE", not DEBUG)
 CSRF_COOKIE_SECURE = env_bool("CSRF_COOKIE_SECURE", not DEBUG)
-SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", False)
+SECURE_SSL_REDIRECT = env_bool("SECURE_SSL_REDIRECT", not DEBUG)
+HTTPS_REDIRECT_AT_PROXY = env_bool("HTTPS_REDIRECT_AT_PROXY", False)
 SECURE_PROXY_SSL_HEADER = (
     ("HTTP_X_FORWARDED_PROTO", "https")
     if env_bool("TRUST_X_FORWARDED_PROTO", False)
@@ -193,10 +237,29 @@ SECURE_PROXY_SSL_HEADER = (
 )
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+SECURE_HSTS_SECONDS = int(
+    os.getenv("SECURE_HSTS_SECONDS", "0" if DEBUG else "31536000")
+)
+SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool("SECURE_HSTS_INCLUDE_SUBDOMAINS", False)
+SECURE_HSTS_PRELOAD = env_bool("SECURE_HSTS_PRELOAD", False)
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+if not DEBUG and not SECURE_SSL_REDIRECT and not HTTPS_REDIRECT_AT_PROXY:
+    raise ImproperlyConfigured(
+        "Enable SECURE_SSL_REDIRECT or confirm HTTPS redirection at the trusted proxy."
+    )
+
+if not DEBUG:
+    if not FCM_PROJECT_ID or not FCM_SERVICE_ACCOUNT_FILE:
+        raise ImproperlyConfigured("Configure FCM_PROJECT_ID and FCM_SERVICE_ACCOUNT_FILE in production.")
+    if not Path(FCM_SERVICE_ACCOUNT_FILE).is_file():
+        raise ImproperlyConfigured("FCM_SERVICE_ACCOUNT_FILE must point to a mounted service-account file.")
 
 CELERY_BROKER_URL = os.getenv("REDIS_URL") or os.getenv(
     "CELERY_BROKER_URL", "redis://localhost:6379/0"
 )
+if not DEBUG and not (os.getenv("REDIS_URL") or os.getenv("CELERY_BROKER_URL")):
+    raise ImproperlyConfigured("Set a production Redis/Celery broker URL.")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
@@ -205,6 +268,14 @@ CELERY_BEAT_SCHEDULE = {
     "reconcile-stale-upi-payments": {
         "task": "payments.reconcile_stale_payments",
         "schedule": 300.0,
+    },
+    "expire-private-data-exports": {
+        "task": "support.expire_data_exports",
+        "schedule": 86400.0,
+    },
+    "process-due-account-deletions": {
+        "task": "support.process_due_account_deletions",
+        "schedule": 3600.0,
     },
 }
 

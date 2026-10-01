@@ -25,19 +25,27 @@ status through this API.
   builds it under `PRIVATE_EXPORT_ROOT`, outside public media serving. When ready,
   `file_url` points to an authenticated, user-scoped download endpoint. Export
   payloads omit password hashes, refresh-token hashes, FCM tokens, and 2FA secrets.
+  Files and download links expire after seven days when Celery Beat runs the
+  export cleanup task.
 - `POST /api/v1/settings/delete-account/` requires `{ "confirm": true }` and
   schedules deletion 30 days later. The grace period is stored in
   `data_requests.scheduled_for`; no data is immediately removed. `DELETE` on the
-  same URL cancels an outstanding request during the grace period.
+  same URL cancels an outstanding request during the grace period. Celery Beat
+  runs the due-request processor hourly; requests wait an additional day while
+  the account has initiated, processing, or unknown UPI payments.
 
-Starting an export requires a running Celery worker and configured broker. Set
-`PRIVATE_EXPORT_ROOT` to a private, access-controlled directory in deployed
-environments. Downloads require both the signed request link and the owning
-user's active bearer authentication.
+Starting an export and processing due deletion requests require a running Celery
+worker and configured broker; export cleanup and deletion scheduling require
+Celery Beat. The web process and worker must share
+`PRIVATE_EXPORT_ROOT`, which must be outside public media and access-controlled.
+Downloads require both the signed request link and the owning user's active
+bearer authentication.
 
-The deletion endpoint records and schedules the user's request; final deletion
-must be carried out by the account-retention process after `scheduled_for`.
-The project does not infer retention rules for financial records.
+After the grace period and once no UPI payment is unresolved, the deletion task
+removes the user's account and related schema-owned records. It anonymizes prior
+audit IP/metadata and keeps a minimal system audit event. The schema cascades
+`data_requests` with account deletion, so the deletion request row itself is
+removed as part of that purge.
 
 ## Audit events
 

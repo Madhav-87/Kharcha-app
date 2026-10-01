@@ -23,6 +23,19 @@ The React development server proxies `/api` requests to Django at
 `http://127.0.0.1:8000`. Its API helper uses `/api/v1` by default; set
 `VITE_API_BASE_URL` only when the API is hosted at a different base URL.
 
+For a production WSGI deployment, serve `config.wsgi:application` with Gunicorn
+behind HTTPS. Set `DJANGO_DEBUG=False`, a random 50+ character
+`DJANGO_SECRET_KEY`, explicit HTTPS `DJANGO_ALLOWED_HOSTS` and
+`CORS_ALLOWED_ORIGINS`, and dedicated MySQL credentials. If TLS terminates at a
+trusted reverse proxy, set `HTTPS_REDIRECT_AT_PROXY=True`; set
+`TRUST_X_FORWARDED_PROTO=True` only when that proxy overwrites the forwarded
+protocol header. Run `python manage.py check --deploy` as part of release
+validation. Configure `CSRF_TRUSTED_ORIGINS`, an HTTPS
+`FRONTEND_PASSWORD_RESET_URL`, SMTP with TLS/SSL, and a strong
+`UPI_CALLBACK_SECRET`, `REDIS_URL`, and FCM project/service-account credentials
+before enabling production traffic. Production settings fail fast when these
+required integration values are missing.
+
 The app modules provide URL includes and now map the supplied schema through
 unmanaged Django models. Apply `student_finance_schema_mysql.sql` to create the
 tables, triggers, seed data, and reporting views. Do not use Django migrations
@@ -66,6 +79,8 @@ documented in [`docs/support-privacy-audit.md`](docs/support-privacy-audit.md).
 
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
+Run a Celery worker for payment reconciliation, notification delivery, and
+privacy export generation; run Celery Beat for scheduled payment reconciliation.
 
 ## Project layout
 

@@ -1,12 +1,16 @@
 """Support workflows and privacy request handling."""
 
 from datetime import timedelta
+from pathlib import Path
 
+from django.conf import settings
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import NotFound, ValidationError
 
+from apps.accounts.models import User
 from apps.accounts.services import record_audit
+from apps.audit.models import AuditLog
 from apps.expenses.models import Expense
 from apps.payments.models import Payment
 from apps.support.models import DataRequest, IssueReport
@@ -16,6 +20,10 @@ DELETION_GRACE_DAYS = 30
 
 @transaction.atomic
 def create_issue(user, values, *, ip_address=None):
+    locked_user = User.objects.select_for_update().filter(pk=user.pk).first()
+    if locked_user is None:
+        raise NotFound("Account was not found.")
+    user = locked_user
     data = dict(values)
     expense_public_id = data.pop("expense_public_id", None)
     payment_public_id = data.pop("payment_public_id", None)
@@ -81,6 +89,10 @@ def privacy_status(user):
 
 @transaction.atomic
 def request_data_export(user, *, ip_address=None):
+    locked_user = User.objects.select_for_update().filter(pk=user.pk).first()
+    if locked_user is None:
+        raise NotFound("Account was not found.")
+    user = locked_user
     request = DataRequest.objects.create(user=user, type=DataRequest.RequestType.EXPORT)
     record_audit(
         user, "data_export_requested", entity_type="data_request", entity_id=request.pk,
@@ -94,7 +106,10 @@ def request_data_export(user, *, ip_address=None):
 
 @transaction.atomic
 def request_account_deletion(user, *, ip_address=None):
-    type(user).objects.select_for_update().only("pk").get(pk=user.pk)
+    locked_user = User.objects.select_for_update().filter(pk=user.pk).first()
+    if locked_user is None:
+        raise NotFound("Account was not found.")
+    user = locked_user
     current = DataRequest.objects.select_for_update().filter(
         user=user,
         type=DataRequest.RequestType.DELETE_ACCOUNT,
@@ -280,3 +295,66 @@ def build_user_export(user):
             for row in audit_events
         ],
     }
+
+
+@transaction.atomic
+def process_due_account_deletion(request_id, *, now=None):
+    """Erase an account after its grace period, preserving a minimal audit event."""
+    now = now or timezone.now()
+    user_id = DataRequest.objects.filter(
+        pk=request_id, type=DataRequest.RequestType.DELETE_ACCOUNT
+    ).values_list("user_id", flat=True).first()
+    if user_id is None:
+        return "skipped"
+
+    user = User.objects.select_for_update().filter(pk=user_id).first()
+    if user is None:
+        return "skipped"
+    request = DataRequest.objects.select_for_update().filter(
+        pk=request_id,
+        user=user,
+        type=DataRequest.RequestType.DELETE_ACCOUNT,
+        status=DataRequest.Status.REQUESTED,
+        scheduled_for__lte=now,
+    )
+    request = request.first()
+    if request is None:
+        return "skipped"
+    unresolved_count = Payment.objects.filter(
+        user=user,
+        status__in=(Payment.Status.INITIATED, Payment.Status.PROCESSING, Payment.Status.UNKNOWN),
+    ).count()
+    if unresolved_count:
+        request.scheduled_for = now + timedelta(days=1)
+        request.save(update_fields=("scheduled_for",))
+        record_audit(
+            user,
+            "account_deletion_deferred",
+            entity_type="data_request",
+            entity_id=request.pk,
+            metadata={"unresolved_payments": unresolved_count},
+        )
+        return "deferred"
+
+    export_ids = list(
+        DataRequest.objects.filter(
+            user=user, type=DataRequest.RequestType.EXPORT
+        ).values_list("id", flat=True)
+    )
+    export_root = Path(settings.PRIVATE_EXPORT_ROOT)
+    for export_id in export_ids:
+        (export_root / f"request-{export_id}.json").unlink(missing_ok=True)
+
+    # Expense.category uses RESTRICT in MySQL. Remove the user's expenses first
+    # so the subsequent user/category cascades cannot be blocked by that FK.
+    Expense.objects.filter(user=user).delete()
+    AuditLog.objects.filter(user=user).update(ip_address=None, metadata=None)
+    record_audit(
+        None,
+        "account_deleted",
+        entity_type="data_request",
+        entity_id=request.pk,
+        metadata={"grace_period_days": DELETION_GRACE_DAYS},
+    )
+    user.delete()
+    return "deleted"

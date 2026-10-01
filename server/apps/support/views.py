@@ -33,6 +33,7 @@ def _request_ip(request):
 
 class IssueListCreateView(APIView):
     permission_classes = [IsActiveAccount]
+    throttle_scope = "support_issue"
 
     def get(self, request):
         try:
@@ -90,6 +91,7 @@ class PrivacyView(APIView):
 
 class ExportDataView(APIView):
     permission_classes = [IsActiveAccount]
+    throttle_scope = "privacy_export"
 
     def post(self, request):
         data_request = services.request_data_export(request.user, ip_address=_request_ip(request))
@@ -133,6 +135,7 @@ class ExportDownloadView(APIView):
 
 class DeleteAccountView(APIView):
     permission_classes = [IsActiveAccount]
+    throttle_scope = "privacy_delete"
 
     def post(self, request):
         serializer = DeleteAccountSerializer(data=request.data)
