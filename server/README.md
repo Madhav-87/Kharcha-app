@@ -37,6 +37,11 @@ See `.env.example` for settings. Existing variable names such as `SECRET_KEY`,
 supported for local setups. `DJANGO_SECRET_KEY` is required (or its legacy
 `SECRET_KEY` equivalent); the server refuses to start without it.
 
+Account/authentication endpoints use short-lived signed bearer access tokens
+and rotating refresh tokens stored as hashes. Configure `GOOGLE_CLIENT_ID` for
+Google sign-in and SMTP settings for password reset email in production. See
+[`docs/accounts-auth.md`](docs/accounts-auth.md) for the endpoint contract.
+
 Celery uses `REDIS_URL` or `CELERY_BROKER_URL`, defaulting to
 `redis://localhost:6379/0`. Start Redis before running a worker.
 

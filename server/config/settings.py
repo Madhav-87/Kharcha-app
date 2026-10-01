@@ -129,15 +129,50 @@ CSRF_TRUSTED_ORIGINS = env_list("CSRF_TRUSTED_ORIGINS")
 CORS_ALLOW_CREDENTIALS = env_bool("CORS_ALLOW_CREDENTIALS", True)
 
 REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "common.exceptions.api_exception_handler",
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "apps.accounts.permissions.IsActiveAccount",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": [
+        "apps.accounts.authentication.SignedBearerAuthentication",
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 20,
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.ScopedRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "auth_register": "5/hour",
+        "auth_login": "10/minute",
+        "auth_google": "10/minute",
+        "auth_forgot_password": "3/hour",
+        "auth_reset_password": "10/hour",
+        "auth_refresh": "30/hour",
+    },
 }
+
+ACCESS_TOKEN_TTL_SECONDS = int(os.getenv("ACCESS_TOKEN_TTL_SECONDS", "900"))
+REFRESH_SESSION_TTL_DAYS = int(os.getenv("REFRESH_SESSION_TTL_DAYS", "30"))
+PASSWORD_RESET_TTL_MINUTES = int(os.getenv("PASSWORD_RESET_TTL_MINUTES", "30"))
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "")
+FRONTEND_PASSWORD_RESET_URL = os.getenv(
+    "FRONTEND_PASSWORD_RESET_URL", "http://localhost:5173/reset-password"
+)
+
+EMAIL_BACKEND = os.getenv(
+    "EMAIL_BACKEND",
+    "django.core.mail.backends.console.EmailBackend"
+    if DEBUG
+    else "django.core.mail.backends.smtp.EmailBackend",
+)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "25"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_bool("EMAIL_USE_TLS", False)
+EMAIL_USE_SSL = env_bool("EMAIL_USE_SSL", False)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "Student Finance <no-reply@example.com>")
 
 # Respect explicit deployment settings while using secure cookie defaults outside
 # local development. HTTPS termination/proxy details remain deployment-specific.
