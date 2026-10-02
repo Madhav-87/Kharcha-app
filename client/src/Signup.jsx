@@ -125,7 +125,8 @@ function Signup() {
     try {
       // TODO: replace with your real signup request
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log(formData);
+      sessionStorage.setItem("student_finance_user", JSON.stringify({ name: formData.name.trim() }));
+      navigate("/onboarding");
     } catch {
       setFormError("We couldn't create your account. Try again in a moment.");
     } finally {

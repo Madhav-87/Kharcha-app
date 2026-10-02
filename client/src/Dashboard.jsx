@@ -63,6 +63,14 @@ const ProgressBar = ({ progress, color }) => (
 // ==========================================
 export default function Dashboard() {
     const navigate = useNavigate();
+    let onboardingProfile = {};
+    try {
+        onboardingProfile = JSON.parse(localStorage.getItem('student_finance_onboarding') || '{}');
+    } catch {
+        onboardingProfile = {};
+    }
+    const displayName = onboardingProfile.name || 'Rahul';
+    const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0].toUpperCase()).join('') || 'RS';
 
     return (
         <div className="app-container dashboard-page">
@@ -76,7 +84,7 @@ export default function Dashboard() {
                         <header className="header">
                             <div>
                                 <p className="header-date">Tuesday, 29 September</p>
-                                <h2 className="header-greeting">Hi, Rahul</h2>
+                                <h2 className="header-greeting">Hi, {displayName.split(/\s+/)[0]}</h2>
                             </div>
 
                             <div className="header-actions">
@@ -87,7 +95,7 @@ export default function Dashboard() {
                                 <button className="btn-icon">
                                     <Bell size={18} />
                                 </button>
-                                <div className="profile-circle">RS</div>
+                                <div className="profile-circle">{initials}</div>
                             </div>
                         </header>
 
